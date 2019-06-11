@@ -14,6 +14,12 @@ include "prepare-deps"
 
 def flags = new LocalBuildProperties(settings as Settings)
 
+if (flags.hasKotlinUltimate) {
+    include ":prepare-deps:native-debug-plugin"
+    project(":prepare-deps:native-debug-plugin").projectDir = file("${flags.propertiesProvider.rootProjectDir}/kotlin-ultimate/buildSrc/prepare-deps/native-debug-plugin")
+    logger.info("Including nativeDebug plugin in buildSrc/settings.gradle")
+}
+
 if (flags.includeCidrPlugins) {
     logger.info("Including CIDR plugins in buildSrc/settings.gradle")
     include ":prepare-deps:kotlin-native-platform-deps"
@@ -56,8 +62,11 @@ class LocalBuildProperties {
     
     boolean includeCidrPlugins
 
+    boolean hasKotlinUltimate
+
     LocalBuildProperties(Settings settings) {
         propertiesProvider = new LocalBuildPropertiesProvider(settings)
-        includeCidrPlugins = propertiesProvider.getBoolean('cidrPluginsEnabled') && new File(propertiesProvider.rootProjectDir, 'kotlin-ultimate').exists()
+        hasKotlinUltimate = new File(propertiesProvider.rootProjectDir, 'kotlin-ultimate').exists()
+        includeCidrPlugins = propertiesProvider.getBoolean('cidrPluginsEnabled') && hasKotlinUltimate
     }
 }
