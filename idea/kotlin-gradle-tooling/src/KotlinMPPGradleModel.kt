@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.gradle
 
+import org.jetbrains.kotlin.konan.target.CompilerOutputKind
 import org.jetbrains.plugins.gradle.model.ExternalDependency
 import org.jetbrains.plugins.gradle.model.ModelFactory
 import java.io.File
@@ -120,6 +121,7 @@ interface KotlinTarget : Serializable {
     val platform: KotlinPlatform
     val compilations: Collection<KotlinCompilation>
     val jar: KotlinTargetJar?
+    val konanArtifacts: List<KonanModelArtifact>
 
     companion object {
         const val METADATA_TARGET_NAME = "metadata"
@@ -139,4 +141,14 @@ interface KotlinMPPGradleModel : Serializable {
     companion object {
         const val NO_KOTLIN_NATIVE_HOME = ""
     }
+}
+
+interface KonanModelArtifact : Serializable {
+    val targetName: String
+    val executableName: String
+    val type: CompilerOutputKind
+    val targetPlatform: String
+    val file: File
+    val buildTaskPath: String
+    val isTests: Boolean
 }

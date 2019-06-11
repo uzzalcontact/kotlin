@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.gradle
 
+import org.jetbrains.kotlin.konan.target.CompilerOutputKind
 import java.io.File
 import java.util.*
 import kotlin.collections.HashSet
@@ -128,7 +129,8 @@ data class KotlinTargetImpl(
     override val disambiguationClassifier: String?,
     override val platform: KotlinPlatform,
     override val compilations: Collection<KotlinCompilation>,
-    override val jar: KotlinTargetJar?
+    override val jar: KotlinTargetJar?,
+    override val konanArtifacts: List<KonanModelArtifact>
 ) : KotlinTarget {
     override fun toString() = name
 
@@ -142,7 +144,8 @@ data class KotlinTargetImpl(
                 cloningCache[initialCompilation] = it
             }
         }.toList(),
-        KotlinTargetJarImpl(target.jar?.archiveFile)
+        KotlinTargetJarImpl(target.jar?.archiveFile),
+        target.konanArtifacts.map { KonanModelArtifactImpl(it) }.toList()
     )
 }
 
@@ -191,4 +194,24 @@ class KotlinPlatformContainerImpl() : KotlinPlatformContainer {
     override fun addSimplePlatforms(platforms: Collection<KotlinPlatform>) {
         (myPlatforms ?: HashSet<KotlinPlatform>().apply { myPlatforms = this }).addAll(platforms)
     }
+}
+
+data class KonanModelArtifactImpl(
+    override val targetName: String,
+    override val executableName: String,
+    override val type: CompilerOutputKind,
+    override val targetPlatform: String,
+    override val file: File,
+    override val buildTaskPath: String,
+    override val isTests: Boolean
+) : KonanModelArtifact {
+    constructor(artifact: KonanModelArtifact) : this(
+        artifact.targetName,
+        artifact.executableName,
+        artifact.type,
+        artifact.targetPlatform,
+        artifact.file,
+        artifact.buildTaskPath,
+        artifact.isTests
+    )
 }

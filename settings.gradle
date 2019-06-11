@@ -224,6 +224,13 @@ include ":kotlin-build-common",
 
 def flags = BuildPropertiesKt.getKotlinBuildPropertiesForSettings(settings)
 
+def isTeamcityBuild = hasProperty("teamcity") || System.getenv("TEAMCITY_VERSION") != null
+def includeUltimate = flags.kotlinUltimateExists && (isTeamcityBuild || flags.intellijUltimateEnabled)
+
+if (flags.includeCidrPlugins || includeUltimate) {
+    include ":kotlin-ultimate:ide:common"
+}
+
 if (flags.includeCidrPlugins) {
     logger.info("Including CIDR plugins in settings.gradle")
     include ":kotlin-ultimate:ide:cidr-native",
@@ -236,8 +243,7 @@ if (flags.includeCidrPlugins) {
     logger.info("NOT including CIDR plugins in settings.gradle")
 }
 
-def isTeamcityBuild = hasProperty("teamcity") || System.getenv("TEAMCITY_VERSION") != null
-if (flags.kotlinUltimateExists && (isTeamcityBuild || flags.intellijUltimateEnabled)) {
+if (includeUltimate) {
     include(
             ":kotlin-ultimate:ultimate",
             ":kotlin-ultimate:ultimate:ultimate-runner"
