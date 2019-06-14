@@ -89,6 +89,7 @@ val jvmPhases = namedIrFilePhase<JvmBackendContext>(
     description = "IR lowering",
     lower = expectDeclarationsRemovingPhase then
             fileClassPhase then
+            inventNamesForLocalClassesPhase then
             kCallableNamePropertyPhase then
             arrayConstructorPhase then
 
@@ -145,6 +146,8 @@ val jvmPhases = namedIrFilePhase<JvmBackendContext>(
             computeStringTrimPhase then
             jvmBuiltinOptimizationLoweringPhase then
             additionalClassAnnotationPhase then
+
+            recordNamesForKotlinTypeMapperPhase then
 
             // should be last transformation
             removeDeclarationsThatWouldBeInlined then
