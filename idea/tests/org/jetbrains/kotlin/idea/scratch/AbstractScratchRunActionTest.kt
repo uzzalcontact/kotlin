@@ -149,7 +149,7 @@ abstract class AbstractScratchRunActionTest : FileEditorManagerTestCase() {
 
         myFixture.openFileInEditor(scratchFile)
 
-        ScriptDependenciesManager.updateScriptDependenciesSynchronously(scratchFile, project)
+        ScriptDependenciesManager.updateScriptDependenciesSynchronously(myFixture.file, project)
 
         val (_, scratchPanel) = getEditorWithScratchPanel(myManager, myFixture.file.virtualFile)
             ?: error("Couldn't find scratch panel")

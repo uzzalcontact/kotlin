@@ -6,27 +6,27 @@
 package org.jetbrains.kotlin.idea.core.script.dependencies
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.script.scriptCompilationConfiguration
 import org.jetbrains.kotlin.idea.core.script.scriptDependencies
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
-import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.asSuccess
 
 // TODO: rename and provide alias for compatibility - this is not only about dependencies anymore
 class FromFileAttributeScriptDependenciesLoader(project: Project) : ScriptDependenciesLoader(project) {
 
-    override fun isApplicable(file: VirtualFile): Boolean {
-        return file.scriptDependencies != null
+    override fun isApplicable(file: KtFile): Boolean {
+        return file is KtFile && file.scriptDependencies != null
     }
 
-    override fun loadDependencies(file: VirtualFile) {
+    override fun loadDependencies(file: KtFile) {
         file.scriptCompilationConfiguration?.let {
-            ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(VirtualFileScriptSource(file), it).apply {
+            ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(KtFileScriptSource(file), it).apply {
                 debug(file) { "refined configuration from fileAttributes = $it" }
             }
         } ?: file.scriptDependencies?.let {
-            ScriptCompilationConfigurationWrapper.FromLegacy(VirtualFileScriptSource(file), it).apply {
+            ScriptCompilationConfigurationWrapper.FromLegacy(KtFileScriptSource(file), it).apply {
                 debug(file) { "dependencies from fileAttributes = $it" }
             }
         }?.let {
@@ -38,7 +38,7 @@ class FromFileAttributeScriptDependenciesLoader(project: Project) : ScriptDepend
 
     override fun shouldShowNotification(): Boolean = false
 
-    private fun areDependenciesValid(file: VirtualFile, configuration: ScriptCompilationConfigurationWrapper.FromLegacy): Boolean {
+    private fun areDependenciesValid(file: KtFile, configuration: ScriptCompilationConfigurationWrapper.FromLegacy): Boolean {
         return configuration.dependenciesClassPath.all {
             if (it.exists()) {
                 true

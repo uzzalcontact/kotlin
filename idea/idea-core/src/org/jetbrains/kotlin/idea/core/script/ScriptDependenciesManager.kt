@@ -1,17 +1,6 @@
 /*
- * Copyright 2010-2016 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2010-2019 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package org.jetbrains.kotlin.idea.core.script
@@ -25,10 +14,13 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
 import com.intellij.util.io.URLUtil
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.idea.caches.project.getAllProjectSdks
 import org.jetbrains.kotlin.idea.core.script.dependencies.SyncScriptDependenciesLoader
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDependenciesProvider
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
@@ -39,23 +31,35 @@ import kotlin.script.experimental.api.valueOrNull
 // NOTE: this service exists exclusively because ScriptDependencyManager
 // cannot be registered as implementing two services (state would be duplicated)
 class IdeScriptDependenciesProvider(
-    private val scriptDependenciesManager: ScriptDependenciesManager
-) : ScriptDependenciesProvider {
-    override fun getScriptConfigurationResult(file: VirtualFile): ScriptCompilationConfigurationResult? = scriptDependenciesManager.getRefinedCompilationConfiguration(file)
+    private val scriptDependenciesManager: ScriptDependenciesManager,
+    project: Project
+) : ScriptDependenciesProvider(project) {
+    override fun getScriptConfigurationResult(file: PsiFile): ScriptCompilationConfigurationResult? {
+        if (file !is KtFile) return null
+        return scriptDependenciesManager.getRefinedCompilationConfiguration(file)
+    }
 }
 
 // TODO: rename and provide alias for compatibility - this is not only about dependencies anymore
 class ScriptDependenciesManager internal constructor(
     private val cacheUpdater: ScriptsCompilationConfigurationUpdater,
-    private val cache: ScriptsCompilationConfigurationCache
+    private val cache: ScriptsCompilationConfigurationCache,
+    private val project: Project
 ) {
-    fun getScriptClasspath(file: VirtualFile): List<VirtualFile> =
+
+    @Deprecated("Use getScriptClasspath(KtFile) instead")
+    fun getScriptClasspath(file: VirtualFile): List<VirtualFile>  {
+        val ktFile = PsiManager.getInstance(project).findFile(file) as? KtFile ?: return emptyList()
+        return getScriptClasspath(ktFile)
+    }
+
+    fun getScriptClasspath(file: KtFile): List<VirtualFile> =
         toVfsRoots(cacheUpdater.getCurrentCompilationConfiguration(file)?.valueOrNull()?.dependenciesClassPath.orEmpty())
 
-    fun getRefinedCompilationConfiguration(file: VirtualFile): ScriptCompilationConfigurationResult? =
+    fun getRefinedCompilationConfiguration(file: KtFile): ScriptCompilationConfigurationResult? =
         cacheUpdater.getCurrentCompilationConfiguration(file)
 
-    fun getScriptSdk(file: VirtualFile, project: Project): Sdk? {
+    fun getScriptSdk(file: KtFile, project: Project): Sdk? {
         return getScriptSdk(getRefinedCompilationConfiguration(file)?.valueOrNull())
             ?: getScriptDefaultSdk(project)
     }
@@ -123,9 +127,12 @@ class ScriptDependenciesManager internal constructor(
         internal val log = Logger.getInstance(ScriptDependenciesManager::class.java)
 
         @TestOnly
-        fun updateScriptDependenciesSynchronously(virtualFile: VirtualFile, project: Project) {
+        fun updateScriptDependenciesSynchronously(file: PsiFile, project: Project) {
             val loader = SyncScriptDependenciesLoader(project)
-            loader.loadDependencies(virtualFile)
+            assert(file is KtFile) {
+                "PsiFile should be a KtFile, otherwise script dependencies cannot be loaded"
+            }
+            loader.loadDependencies(file as KtFile)
             loader.notifyRootsChanged()
         }
     }

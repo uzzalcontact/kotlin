@@ -5,25 +5,25 @@
 
 package org.jetbrains.kotlin.scripting.compiler.plugin.definitions
 
-import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocation
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptReportSink
 import kotlin.script.experimental.dependencies.ScriptReport
 
 internal class CliScriptReportSink(private val messageCollector: MessageCollector) :
     ScriptReportSink {
-    override fun attachReports(scriptFile: VirtualFile, reports: List<ScriptReport>) {
+    override fun attachReports(scriptFile: KtFile, reports: List<ScriptReport>) {
         reports.forEach {
             messageCollector.report(it.severity.convertSeverity(), it.message, location(scriptFile, it.position))
         }
     }
 
-    private fun location(scriptFile: VirtualFile, position: ScriptReport.Position?): CompilerMessageLocation? {
-        if (position == null) return CompilerMessageLocation.create(scriptFile.path)
+    private fun location(scriptFile: KtFile, position: ScriptReport.Position?): CompilerMessageLocation? {
+        if (position == null) return CompilerMessageLocation.create(scriptFile.virtualFilePath)
 
-        return CompilerMessageLocation.create(scriptFile.path, position.startLine, position.startColumn, null)
+        return CompilerMessageLocation.create(scriptFile.virtualFilePath, position.startLine, position.startColumn, null)
     }
 
     private fun ScriptReport.Severity.convertSeverity(): CompilerMessageSeverity = when (this) {

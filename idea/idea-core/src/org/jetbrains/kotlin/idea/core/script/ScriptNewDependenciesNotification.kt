@@ -11,14 +11,14 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.Ref
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.HyperlinkLabel
 import org.jetbrains.kotlin.idea.core.script.settings.KotlinScriptingSettings
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.UserDataProperty
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 
-fun VirtualFile.removeScriptDependenciesNotificationPanel(project: Project) {
+fun KtFile.removeScriptDependenciesNotificationPanel(project: Project) {
     withSelectedEditor(project) { manager ->
         notificationPanel?.let {
             manager.removeTopComponent(this, it)
@@ -27,7 +27,7 @@ fun VirtualFile.removeScriptDependenciesNotificationPanel(project: Project) {
     }
 }
 
-fun VirtualFile.addScriptDependenciesNotificationPanel(
+fun KtFile.addScriptDependenciesNotificationPanel(
     compilationConfigurationResult: ScriptCompilationConfigurationResult?,
     project: Project,
     onClick: (ScriptCompilationConfigurationResult?) -> Unit
@@ -49,10 +49,12 @@ fun VirtualFile.addScriptDependenciesNotificationPanel(
     }
 }
 
-private fun VirtualFile.withSelectedEditor(project: Project, f: FileEditor.(FileEditorManager) -> Unit) {
+private fun KtFile.withSelectedEditor(project: Project, f: FileEditor.(FileEditorManager) -> Unit) {
     ApplicationManager.getApplication().invokeLater {
         val fileEditorManager = FileEditorManager.getInstance(project)
-        (fileEditorManager.getSelectedEditor(this))?.let {
+        val virtualFile = this.virtualFile ?: return@invokeLater
+
+        (fileEditorManager.getSelectedEditor(virtualFile))?.let {
             f(it, fileEditorManager)
         }
     }

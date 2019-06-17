@@ -8,12 +8,13 @@ package org.jetbrains.kotlin.scripting.compiler.plugin.definitions
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDependenciesProvider
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
+import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptReportSink
-import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
 import java.io.File
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -22,22 +23,23 @@ import kotlin.concurrent.write
 import kotlin.script.experimental.api.ResultWithDiagnostics
 import kotlin.script.experimental.jvm.compat.mapToLegacyReports
 
-class CliScriptDependenciesProvider(private val project: Project) : ScriptDependenciesProvider {
+class CliScriptDependenciesProvider(project: Project) : ScriptDependenciesProvider(project) {
     private val cacheLock = ReentrantReadWriteLock()
     private val cache = hashMapOf<String, ScriptCompilationConfigurationResult?>()
 
-    override fun getScriptConfigurationResult(file: VirtualFile): ScriptCompilationConfigurationResult? = cacheLock.read {
+    override fun getScriptConfigurationResult(file: PsiFile): ScriptCompilationConfigurationResult? = cacheLock.read {
+        if (file !is KtFile) return null
         calculateRefinedConfiguration(file)
     }
 
-    private fun calculateRefinedConfiguration(file: VirtualFile): ScriptCompilationConfigurationResult? {
-        val path = file.path
+    private fun calculateRefinedConfiguration(file: KtFile): ScriptCompilationConfigurationResult? {
+        val path = file.virtualFilePath
         val cached = cache[path]
         return if (cached != null) cached
         else {
-            val scriptDef = file.findScriptDefinition(project)
+            val scriptDef = file.findScriptDefinition()
             if (scriptDef != null) {
-                val result = refineScriptCompilationConfiguration(VirtualFileScriptSource(file), scriptDef, project)
+                val result = refineScriptCompilationConfiguration(KtFileScriptSource(file), scriptDef, project)
 
                 ServiceManager.getService(project, ScriptReportSink::class.java)?.attachReports(file, result.reports.mapToLegacyReports())
 

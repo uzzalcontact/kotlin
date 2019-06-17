@@ -21,16 +21,25 @@ inline fun <T> runReadAction(crossinline runnable: () -> T): T {
 }
 
 fun PsiFile.findScriptDefinition(): ScriptDefinition? {
+    val virtualFile = this.virtualFile
+    if (virtualFile == null) {
+        if (this != originalFile) {
+            return originalFile.findScriptDefinition()
+        }
+        return null
+    }
+
+    if (virtualFile.isNonScript()) return null
+
     // Do not use psiFile.script, see comments in findScriptDefinition
     if (this !is KtFile/* || this.script == null*/) return null
-    val file = virtualFile ?: originalFile.virtualFile ?: return null
-    if (file.isNonScript()) return null
 
-    return findScriptDefinitionByFilePath(project, file.path)
+    return findScriptDefinitionByFilePath(project, this.virtualFilePath)
 }
 
+@Deprecated("Use PsiFile.findScriptDefinition() instead")
 fun VirtualFile.findScriptDefinition(project: Project): ScriptDefinition? {
-    if (!isValid || isNonScript()) return null
+    if (!isValid || !isNonScript()) return null
     // Do not use psiFile.script here because this method can be called during indexes access
     // and accessing stubs may cause deadlock
     // TODO: measure performance effect and if necessary consider detecting indexing here or using separate logic for non-IDE operations to speed up filtering
@@ -55,6 +64,6 @@ private fun VirtualFile.isNonScript(): Boolean =
 
 private fun VirtualFile.isKotlinFileType(): Boolean {
     val typeRegistry = FileTypeRegistry.getInstance()
-    return typeRegistry.getFileTypeByFile(this) == KotlinFileType.INSTANCE ||
+    return fileType == KotlinFileType.INSTANCE ||
             typeRegistry.getFileTypeByFileName(name) == KotlinFileType.INSTANCE
 }
