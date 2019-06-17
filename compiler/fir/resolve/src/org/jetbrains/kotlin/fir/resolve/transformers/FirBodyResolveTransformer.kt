@@ -805,7 +805,7 @@ open class FirBodyResolveTransformer(val session: FirSession, val implicitTypeOn
         data: Any?
     ): CompositeTransformResult<FirStatement> {
         val parentWhen = whenSubjectExpression.whenSubject.whenExpression
-        val subjectType = parentWhen.subject?.resultType ?: parentWhen.subjectVariable?.returnTypeRef
+        val subjectType = parentWhen.subjectVariable?.returnTypeRef ?: parentWhen.subject?.resultType
         if (subjectType != null) {
             whenSubjectExpression.resultType = subjectType
         }
