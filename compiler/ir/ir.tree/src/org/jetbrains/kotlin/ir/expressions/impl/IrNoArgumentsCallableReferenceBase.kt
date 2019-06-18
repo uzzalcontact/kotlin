@@ -40,5 +40,6 @@ abstract class IrNoArgumentsCallableReferenceBase(
     override fun putValueArgument(index: Int, valueArgument: IrExpression?) = throwNoValueArguments()
 
     override fun removeValueArgument(index: Int) = throwNoValueArguments()
-}
 
+    override var attributeOwnerId: Any? = Any()
+}

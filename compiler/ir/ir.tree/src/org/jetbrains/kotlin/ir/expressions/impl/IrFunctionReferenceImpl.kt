@@ -55,4 +55,6 @@ class IrFunctionReferenceImpl(
 
     override fun <R, D> accept(visitor: IrElementVisitor<R, D>, data: D): R =
         visitor.visitFunctionReference(this, data)
+
+    override var attributeOwnerId: Any? = Any()
 }
