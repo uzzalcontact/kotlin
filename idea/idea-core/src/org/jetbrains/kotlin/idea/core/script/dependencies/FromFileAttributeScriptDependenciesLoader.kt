@@ -30,9 +30,15 @@ class FromFileAttributeScriptDependenciesLoader(project: Project) : ScriptDepend
                 debug(file) { "dependencies from fileAttributes = $it" }
             }
         }?.let {
-            saveToCache(file, it.asSuccess(), skipSaveToAttributes = true)
+            if (areDependenciesValid(it)) {
+                saveToCache(file, it.asSuccess(), skipSaveToAttributes = true)
+            }
         }
     }
 
     override fun shouldShowNotification(): Boolean = false
+
+    private fun areDependenciesValid(configuration: ScriptCompilationConfigurationWrapper.FromLegacy): Boolean {
+        return configuration.dependenciesClassPath.all { it.exists() }
+    }
 }
