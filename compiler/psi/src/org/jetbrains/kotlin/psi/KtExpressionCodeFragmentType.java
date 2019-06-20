@@ -41,6 +41,10 @@ public class KtExpressionCodeFragmentType extends KtFileElementType {
 
     @Override
     protected ASTNode doParseContents(@NotNull ASTNode chameleon, @NotNull PsiElement psi) {
+        if (chameleon.getTextLength() == 0) {
+            return null;
+        }
+
         Project project = psi.getProject();
         Language languageForParser = getLanguageForParser(psi);
         PsiBuilder builder = PsiBuilderFactory.getInstance().createBuilder(project, chameleon, null, languageForParser, chameleon.getChars());
