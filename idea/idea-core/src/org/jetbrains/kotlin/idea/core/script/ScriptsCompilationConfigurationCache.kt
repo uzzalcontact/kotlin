@@ -16,11 +16,14 @@
 
 package org.jetbrains.kotlin.idea.core.script
 
+import com.intellij.ProjectTopics
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.extensions.Extensions
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.roots.ModuleRootEvent
+import com.intellij.openapi.roots.ModuleRootListener
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.vfs.VirtualFile
@@ -46,6 +49,18 @@ class ScriptsCompilationConfigurationCache(private val project: Project) {
 
     companion object {
         const val MAX_SCRIPTS_CACHED = 50
+    }
+
+    init {
+        val connection = project.messageBus.connect()
+        connection.subscribe(ProjectTopics.PROJECT_ROOTS, object : ModuleRootListener {
+            override fun rootsChanged(event: ModuleRootEvent) {
+                this@ScriptsCompilationConfigurationCache::allSdks.clearValue()
+                this@ScriptsCompilationConfigurationCache::allNonIndexedSdks.clearValue()
+
+                scriptsDependenciesClasspathScopeCache.clear()
+            }
+        })
     }
 
     private val cacheLock = ReentrantReadWriteLock()
