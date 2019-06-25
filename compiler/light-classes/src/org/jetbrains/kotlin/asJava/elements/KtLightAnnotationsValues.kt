@@ -11,6 +11,7 @@ import com.intellij.psi.impl.LanguageConstantExpressionEvaluator
 import com.intellij.psi.impl.light.LightIdentifier
 import com.intellij.psi.impl.light.LightTypeElement
 import org.jetbrains.kotlin.asJava.LightClassGenerationSupport
+import org.jetbrains.kotlin.asJava.classes.cannotModify
 import org.jetbrains.kotlin.asJava.classes.lazyPub
 import org.jetbrains.kotlin.builtins.jvm.JavaToKotlinClassMap
 import org.jetbrains.kotlin.name.FqNameUnsafe
@@ -106,31 +107,21 @@ internal fun psiType(kotlinFqName: String, context: PsiElement, boxPrimitiveType
     return PsiType.getTypeByName(javaFqName, context.project, context.resolveScope)
 }
 
-class KtLightPsiNameValuePair private constructor(
-    override val kotlinOrigin: KtElement,
-    val valueArgument: KtValueArgument,
-    lightParent: PsiElement,
-    private val argument: (KtLightPsiNameValuePair) -> PsiAnnotationMemberValue?
-) : KtLightElementBase(lightParent),
-    PsiNameValuePair {
+internal class KtLightPsiNameValuePair(
+    val valueArguments: List<ValueArgument>,
+    private val _kotlinOrigin: KtElement,
+    private val parameterName: String,
+    private val value: PsiAnnotationMemberValue
+) : PsiNameValuePair, KtLightElementBase(_kotlinOrigin.parent) {
+    override fun setValue(p0: PsiAnnotationMemberValue): PsiAnnotationMemberValue = cannotModify()
 
-    constructor(
-        valueArgument: KtValueArgument,
-        lightParent: PsiElement,
-        argument: (KtLightPsiNameValuePair) -> PsiAnnotationMemberValue?
-    ) : this(valueArgument.asElement(), valueArgument, lightParent, argument)
+    override fun getNameIdentifier(): PsiIdentifier? = LightIdentifier(_kotlinOrigin.manager, parameterName)
 
-    override fun setValue(newValue: PsiAnnotationMemberValue): PsiAnnotationMemberValue =
-        throw UnsupportedOperationException("can't modify KtLightPsiNameValuePair")
+    override fun getValue(): PsiAnnotationMemberValue? = value
 
-    override fun getNameIdentifier(): PsiIdentifier? = LightIdentifier(kotlinOrigin.manager, valueArgument.name)
+    override fun getLiteralValue(): String? = (value as? PsiLiteralExpression)?.value?.toString()
 
-    override fun getName(): String? = valueArgument.getArgumentName()?.asName?.asString()
+    override fun getName(): String? = parameterName
 
-    private val _value: PsiAnnotationMemberValue? by lazyPub { argument(this) }
-
-    override fun getValue(): PsiAnnotationMemberValue? = _value
-
-    override fun getLiteralValue(): String? = (getValue() as? PsiLiteralExpression)?.value?.toString()
-
+    override val kotlinOrigin: KtElement? = _kotlinOrigin
 }

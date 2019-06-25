@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.asJava.elements
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.*
+import com.intellij.psi.impl.light.LightIdentifier
 import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
@@ -41,9 +42,11 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.CompileTimeConstantUtils
 import org.jetbrains.kotlin.resolve.calls.callUtil.getResolvedCall
 import org.jetbrains.kotlin.resolve.calls.callUtil.getType
+import org.jetbrains.kotlin.resolve.calls.components.isVararg
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedValueArgument
 import org.jetbrains.kotlin.resolve.descriptorUtil.declaresOrInheritsDefaultValue
+import org.jetbrains.kotlin.resolve.descriptorUtil.varargParameterPosition
 import org.jetbrains.kotlin.resolve.source.getPsi
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeUtils
@@ -109,7 +112,7 @@ class KtLightAnnotationForSourceEntry(
 
         val valueArgument = callEntry.value.arguments.firstOrNull()
         if (valueArgument != null) {
-            ktLightAnnotationParameterList.attributes.find { (it as KtLightPsiNameValuePair).valueArgument === valueArgument }?.let {
+            ktLightAnnotationParameterList.attributes.find { (it as KtLightPsiNameValuePair).valueArguments.contains(valueArgument) }?.let {
                 return it.value
             }
         }
@@ -142,46 +145,62 @@ class KtLightAnnotationForSourceEntry(
         PsiAnnotationParameterList {
         override val kotlinOrigin: KtElement? get() = null
 
+        private fun convertToNameValuePairForVarArg(argument: Map.Entry<ValueParameterDescriptor, ResolvedValueArgument>): KtLightPsiNameValuePair? {
+            val values = KtLightPsiArrayInitializerMemberValue(
+                this@KtLightAnnotationForSourceEntry.kotlinOrigin,
+                this@KtLightAnnotationForSourceEntry
+            ) { _ ->
+                argument.value.arguments
+                    .filterNotNull()
+                    .mapNotNull { it.getArgumentExpression() }
+                    .map {
+                        convertToLightAnnotationMemberValue(this@KtLightAnnotationForSourceEntry, it)
+                    }
+            }
+
+            return KtLightPsiNameValuePair(
+                argument.value.arguments,
+                this@KtLightAnnotationForSourceEntry.kotlinOrigin,
+                argument.key.name.asString(),
+                values
+            )
+        }
+
+        private fun convertToNameValuePairForSingleValue(argument: Map.Entry<ValueParameterDescriptor, ResolvedValueArgument>): KtLightPsiNameValuePair? {
+
+            val firstArgument = argument.value.arguments.firstOrNull() ?: return null
+            val argumentExpression = firstArgument.getArgumentExpression() ?: return null
+
+            val values = convertToLightAnnotationMemberValue(
+                firstArgument.asElement(),
+                argumentExpression
+            )
+
+            return KtLightPsiNameValuePair(
+                argument.value.arguments,
+                firstArgument.asElement(),
+                argument.key.name.asString(),
+                values
+            )
+        }
+
         private val _attributes: Array<PsiNameValuePair> by lazyPub {
-            this@KtLightAnnotationForSourceEntry.kotlinOrigin.valueArguments.map { makeLightPsiNameValuePair(it as KtValueArgument) }
-                .toTypedArray<PsiNameValuePair>()
-        }
-
-        private fun makeArrayInitializerIfExpected(pair: KtLightPsiNameValuePair): PsiAnnotationMemberValue? {
-            val valueArgument = pair.valueArgument
-            val name = valueArgument.name ?: "value"
-            val callEntry = getCallEntry(name) ?: return null
-
-            val valueArguments = callEntry.value.arguments
-            val argument = valueArguments.firstOrNull()?.getArgumentExpression() ?: return null
-
-            if (!callEntry.key.type.let { KotlinBuiltIns.isArrayOrPrimitiveArray(it) }) return null
-
-            if (argument !is KtStringTemplateExpression &&
-                argument !is KtConstantExpression &&
-                argument !is KtClassLiteralExpression &&
-                getAnnotationName(argument) == null
-            ) {
-                return null
-            }
-
-            val parent = PsiTreeUtil.findCommonParent(valueArguments.map { it.getArgumentExpression() }) as KtElement
-            return KtLightPsiArrayInitializerMemberValue(parent, pair) { self ->
-                valueArguments.mapNotNull {
-                    it.getArgumentExpression()?.let { convertToLightAnnotationMemberValue(self, it) }
+            this@KtLightAnnotationForSourceEntry.kotlinOrigin.getResolvedCall()
+                ?.valueArguments
+                ?.mapNotNull {
+                    //TODO: Investigate better way to distinguish between a(x = [1,2,3]) and a(1,2,3) for varargs
+                    val isVarargList = it.key.isVararg && it.value.arguments.firstOrNull()?.getArgumentName() === null
+                    if (isVarargList) {
+                        convertToNameValuePairForVarArg(it)
+                    } else {
+                        convertToNameValuePairForSingleValue(it)
+                    }
                 }
-            }
+                ?.toTypedArray()
+                ?: emptyArray()
         }
-
-        private fun makeLightPsiNameValuePair(valueArgument: KtValueArgument) = KtLightPsiNameValuePair(valueArgument, this) { self ->
-            makeArrayInitializerIfExpected(self)
-                ?: self.valueArgument.getArgumentExpression()?.let { convertToLightAnnotationMemberValue(self, it) }
-        }
-
         override fun getAttributes(): Array<PsiNameValuePair> = _attributes
-
     }
-
 
     override fun delete() = kotlinOrigin.delete()
 
