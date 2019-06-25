@@ -36,7 +36,7 @@ import org.jetbrains.kotlin.resolve.source.toSourceElement
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.definitions.ScriptDependenciesProvider
 import org.jetbrains.kotlin.scripting.definitions.ScriptPriorities
-import org.jetbrains.kotlin.scripting.definitions.findScriptDefinitionByFileName
+import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.types.TypeSubstitutor
 import org.jetbrains.kotlin.types.typeUtil.isNothing
 import org.jetbrains.kotlin.types.typeUtil.isUnit
@@ -107,10 +107,7 @@ class LazyScriptDescriptor(
 
     // rewrite without using legacyDefinition below
     val scriptDefinition: () -> ScriptDefinition = resolveSession.storageManager.createLazyValue {
-        findScriptDefinitionByFileName(
-            resolveSession.project,
-            scriptInfo.script.containingKtFile.name
-        )
+        scriptInfo.script.containingKtFile.findScriptDefinition()!!
     }
 
     override fun substitute(substitutor: TypeSubstitutor) = this

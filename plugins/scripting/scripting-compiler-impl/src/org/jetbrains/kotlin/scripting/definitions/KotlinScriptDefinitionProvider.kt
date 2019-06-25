@@ -15,9 +15,9 @@ interface ScriptDefinitionProvider {
     @Deprecated("Migrating to configuration refinement", level = DeprecationLevel.ERROR)
     fun getDefaultScriptDefinition(): KotlinScriptDefinition
 
-    fun isScript(fileName: String): Boolean
+    fun isScript(filePath: String): Boolean
 
-    fun findDefinition(fileName: String): ScriptDefinition?
+    fun findDefinition(filePath: String): ScriptDefinition?
     fun getDefaultDefinition(): ScriptDefinition
 
     fun getKnownFilenameExtensions(): Sequence<String>

@@ -70,7 +70,7 @@ private open class FakeScriptDefinition(val suffix: String = ".kts") :
     ScriptDefinition.FromLegacy(defaultJvmScriptingHostConfiguration, KotlinScriptDefinition(ScriptTemplateWithArgs::class))
 {
     val matchCounter = AtomicInteger()
-    override fun isScript(fileName: String): Boolean = fileName.endsWith(suffix).also {
+    override fun isScript(filePath: String): Boolean = filePath.endsWith(suffix).also {
         if (it) matchCounter.incrementAndGet()
     }
 

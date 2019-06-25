@@ -44,15 +44,15 @@ abstract class LazyScriptDefinitionProvider : ScriptDefinitionProvider {
         fileName.endsWith(it, ignoreCase = true)
     }
 
-    override fun findDefinition(fileName: String): ScriptDefinition? =
-        if (nonScriptFileName(fileName)) null
+    override fun findDefinition(filePath: String): ScriptDefinition? =
+        if (nonScriptFileName(filePath)) null
         else lock.read {
-            cachedDefinitions.firstOrNull { it.isScript(fileName) }
+            cachedDefinitions.firstOrNull { it.isScript(filePath) }
         }
 
     override fun findScriptDefinition(fileName: String): KotlinScriptDefinition? = findDefinition(fileName)?.legacyDefinition
 
-    override fun isScript(fileName: String) = findDefinition(fileName) != null
+    override fun isScript(filePath: String) = findDefinition(filePath) != null
 
     override fun getKnownFilenameExtensions(): Sequence<String> = lock.read {
         cachedDefinitions.map { it.fileExtension }

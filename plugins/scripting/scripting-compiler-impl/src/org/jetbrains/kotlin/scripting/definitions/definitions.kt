@@ -26,7 +26,7 @@ fun PsiFile.findScriptDefinition(): ScriptDefinition? {
     val file = virtualFile ?: originalFile.virtualFile ?: return null
     if (file.isNonScript()) return null
 
-    return findScriptDefinitionByFileName(project, file.name)
+    return findScriptDefinitionByFilePath(project, file.path)
 }
 
 fun VirtualFile.findScriptDefinition(project: Project): ScriptDefinition? {
@@ -37,10 +37,10 @@ fun VirtualFile.findScriptDefinition(project: Project): ScriptDefinition? {
 
     if (runReadAction { PsiManager.getInstance(project).findFile(this) as? KtFile }/*?.script*/ == null) return null
 
-    return findScriptDefinitionByFileName(project, name)
+    return findScriptDefinitionByFilePath(project, path)
 }
 
-fun findScriptDefinitionByFileName(project: Project, fileName: String): ScriptDefinition {
+private fun findScriptDefinitionByFilePath(project: Project, fileName: String): ScriptDefinition {
     val scriptDefinitionProvider = ScriptDefinitionProvider.getInstance(project) ?: return null
         ?: throw IllegalStateException("Unable to get script definition: ScriptDefinitionProvider is not configured.")
 
