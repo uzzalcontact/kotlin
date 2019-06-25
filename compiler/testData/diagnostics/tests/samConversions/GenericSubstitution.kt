@@ -1,4 +1,4 @@
-// !LANGUAGE: +NewInference
+// !LANGUAGE: +NewInference +SamConversionForStandaloneArgument
 // !CHECK_TYPE
 // FILE: J.java
 public interface J<T> {

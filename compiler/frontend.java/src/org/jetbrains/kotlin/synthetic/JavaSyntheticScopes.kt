@@ -45,7 +45,8 @@ class JavaSyntheticScopes(
     val scopesWithForceEnabledSamAdapters: Collection<SyntheticScope>
 
     init {
-        val newInferenceEnabled = languageVersionSettings.supportsFeature(LanguageFeature.NewInference)
+        val standaloneSamArgumentConversionsEnabled =
+            languageVersionSettings.supportsFeature(LanguageFeature.SamConversionForStandaloneArgument)
 
         val javaSyntheticPropertiesScope = JavaSyntheticPropertiesScope(storageManager, lookupTracker)
         val scopesFromExtensions = SyntheticScopeProviderExtension
@@ -58,12 +59,12 @@ class JavaSyntheticScopes(
             samConventionResolver,
             deprecationResolver,
             lookupTracker,
-            samViaSyntheticScopeDisabled = newInferenceEnabled
+            samViaSyntheticScopeDisabled = standaloneSamArgumentConversionsEnabled
         )
 
         scopes = listOf(javaSyntheticPropertiesScope, samAdapterFunctionsScope) + scopesFromExtensions
 
-        if (newInferenceEnabled) {
+        if (standaloneSamArgumentConversionsEnabled) {
             val forceEnabledSamAdapterFunctionsScope = SamAdapterFunctionsScope(
                 storageManager,
                 samConventionResolver,
