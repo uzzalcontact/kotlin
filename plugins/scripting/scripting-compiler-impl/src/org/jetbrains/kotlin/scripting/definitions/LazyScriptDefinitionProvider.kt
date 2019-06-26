@@ -6,10 +6,15 @@
 package org.jetbrains.kotlin.scripting.definitions
 
 import com.intellij.ide.highlighter.JavaFileType
+import com.intellij.openapi.util.io.FileUtil
 import org.jetbrains.kotlin.idea.KotlinFileType
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
+import kotlin.script.experimental.api.IdeScriptCompilationConfigurationKeys
+import kotlin.script.experimental.api.ScriptCompilationConfiguration
+import kotlin.script.experimental.api.acceptedPaths
+import kotlin.script.experimental.api.ide
 import kotlin.script.experimental.host.ScriptingHostConfiguration
 import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
 
@@ -47,7 +52,16 @@ abstract class LazyScriptDefinitionProvider : ScriptDefinitionProvider {
     override fun findDefinition(filePath: String): ScriptDefinition? =
         if (nonScriptFileName(filePath)) null
         else lock.read {
-            cachedDefinitions.firstOrNull { it.isScript(filePath) }
+            cachedDefinitions.firstOrNull {
+                if (it.isScript(filePath)) {
+                    val acceptedPaths = it.compilationConfiguration[ScriptCompilationConfiguration.ide.acceptedPaths]
+                    acceptedPaths == null || acceptedPaths.any {
+                        FileUtil.isAncestor(it.path, filePath, false)
+                    }
+                } else {
+                    false
+                }
+            }
         }
 
     override fun findScriptDefinition(fileName: String): KotlinScriptDefinition? = findDefinition(fileName)?.legacyDefinition

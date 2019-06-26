@@ -32,6 +32,11 @@ public class ScriptConfigurationHighlightingTestGenerated extends AbstractScript
             runTest("idea/testData/script/definition/highlighting/acceptedAnnotations/");
         }
 
+        @TestMetadata("acceptedPaths")
+        public void testAcceptedPaths() throws Exception {
+            runTest("idea/testData/script/definition/highlighting/acceptedPaths/");
+        }
+
         @TestMetadata("additionalImports")
         public void testAdditionalImports() throws Exception {
             runTest("idea/testData/script/definition/highlighting/additionalImports/");
