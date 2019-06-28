@@ -72,6 +72,7 @@ class Stats(val name: String = "", val header: Array<String> = arrayOf("Name", "
                     println("##teamcity[buildStatisticValue key='$n' value='$spentMs']")
                     println("##teamcity[testFinished name='$n' duration='$spentMs']")
                 } catch (t: Throwable) {
+                    println("##teamcity[testFinished name='$n']")
                     println("error at $n:")
                     tcPrintErrors(n, listOf(t))
                     throw t
