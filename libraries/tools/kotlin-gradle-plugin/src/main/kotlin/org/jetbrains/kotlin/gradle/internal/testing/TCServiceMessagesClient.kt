@@ -39,9 +39,11 @@ internal open class TCServiceMessagesClient(
     inline fun root(operation: OperationIdentifier, actions: () -> Unit) {
         rootOperationId = operation
 
-        RootNode(operation).open {
-            actions()
-        }
+        val tsStart = System.currentTimeMillis()
+        val root = RootNode(operation)
+        open(tsStart, root)
+        actions()
+        closeAll()
     }
 
     override fun parseException(e: ParseException, text: String) {
@@ -480,7 +482,10 @@ internal open class TCServiceMessagesClient(
         val ts = System.currentTimeMillis()
 
         while (leaf != null) {
-            close(ts, leaf!!.localId)
+            val currentLeaf = leaf!!
+            if (currentLeaf is TestNode) currentLeaf.failure(TestFailed(currentLeaf.cleanName, null))
+
+            close(ts, currentLeaf.localId)
         }
     }
 
