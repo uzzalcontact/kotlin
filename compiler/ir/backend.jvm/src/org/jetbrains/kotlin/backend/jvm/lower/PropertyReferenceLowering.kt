@@ -276,8 +276,7 @@ internal class PropertyReferenceLowering(val context: JvmBackendContext) : Class
                     parent = irClass
                     superTypes += IrSimpleTypeImpl(superClass.symbol, false, listOf(), listOf())
                     createImplicitParameterDeclarationWithWrappedDescriptor()
-                    attributeOwnerId = expression.attributeOwnerId
-                }
+                }.copyAttributes(expression)
 
                 // See propertyReferenceKindFor -- only one of them could ever be present.
                 val numOfSuperArgs = if (expression.dispatchReceiver != null || expression.extensionReceiver != null) 1 else 0
