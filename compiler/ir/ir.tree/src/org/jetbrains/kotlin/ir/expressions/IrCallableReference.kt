@@ -20,10 +20,9 @@ import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.descriptors.VariableDescriptorWithAccessors
-import org.jetbrains.kotlin.ir.declarations.IrAttributeContainer
 import org.jetbrains.kotlin.ir.symbols.*
 
-interface IrCallableReference : IrMemberAccessExpression, IrDeclarationReference, IrAttributeContainer {
+interface IrCallableReference : IrMemberAccessExpression, IrDeclarationReference {
     override val descriptor: CallableDescriptor
 }
 

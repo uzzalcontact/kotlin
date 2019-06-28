@@ -24,4 +24,6 @@ abstract class IrExpressionBase(
     startOffset: Int,
     endOffset: Int,
     override val type: IrType
-) : IrElementBase(startOffset, endOffset), IrExpression
+) : IrElementBase(startOffset, endOffset), IrExpression {
+    override var attributeOwnerId: Any? = Any()
+}

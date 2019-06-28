@@ -233,8 +233,7 @@ private class JvmInlineClassLowering(private val context: JvmBackendContext) : F
             expression.origin
         ).apply {
             buildReplacement(expression.symbol.owner, expression, replacement)
-            attributeOwnerId = expression.attributeOwnerId
-        }
+        }.copyAttributes(expression)
     }
 
     override fun visitFunctionAccess(expression: IrFunctionAccessExpression): IrExpression {

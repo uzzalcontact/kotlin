@@ -10,3 +10,9 @@ interface IrAttributeContainer {
     // The idea is that this field should survive transformations and be copied when the corresponding element is copied.
     var attributeOwnerId: Any?
 }
+
+fun <D : IrAttributeContainer> D.copyAttributes(other: IrAttributeContainer?): D = apply {
+    if (other != null) {
+        attributeOwnerId = other.attributeOwnerId
+    }
+}
