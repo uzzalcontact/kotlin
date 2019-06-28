@@ -166,7 +166,7 @@ class ScriptsCompilationConfigurationUpdater(
     }
 
     private fun areDependenciesCached(file: KtFile): Boolean {
-        return cache[file] != null || file.scriptDependencies != null
+        return cache[file] != null || file.scriptDependencies != null || file.scriptCompilationConfiguration != null
     }
 
     fun isAsyncDependencyResolver(scriptDef: ScriptDefinition): Boolean =
