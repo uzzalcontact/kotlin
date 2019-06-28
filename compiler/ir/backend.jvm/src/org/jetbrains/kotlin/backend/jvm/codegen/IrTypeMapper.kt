@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.isKClass
 import org.jetbrains.kotlin.load.kotlin.TypeMappingMode
 import org.jetbrains.kotlin.load.kotlin.computeExpandedTypeForInlineClass
@@ -163,7 +163,7 @@ class IrTypeMapper(private val context: JvmBackendContext) {
             is IrClass -> {
                 computeInternalName(parent) + "$" + className
             }
-            else -> error("Unsupported class parent (class $className):\n${parent.dump()}")
+            else -> error("Local class should have its name computed in InventNamesForLocalClasses: ${klass.fqNameWhenAvailable}")
         }
     }
 
