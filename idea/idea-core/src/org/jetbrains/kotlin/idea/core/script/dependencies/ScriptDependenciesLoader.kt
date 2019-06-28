@@ -145,8 +145,7 @@ abstract class ScriptDependenciesLoader(protected val project: Project) {
 
         internal fun debug(file: KtFile? = null, message: () -> String) {
             if (LOG.isDebugEnabled) {
-                val fileName = (file?.virtualFile ?: file?.originalFile?.virtualFile)?.path ?: ""
-                LOG.debug("[KOTLIN SCRIPT] $fileName " + message())
+                LOG.debug("[KOTLIN SCRIPT] ${file?.virtualFilePath} " + message())
             }
         }
     }

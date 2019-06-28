@@ -105,7 +105,7 @@ class ScriptsCompilationConfigurationCache(private val project: Project) {
             .flatMap { it.rootProvider.getFiles(OrderRootType.CLASSES).toList() }
 
         val scriptDependenciesClasspath = scriptDependenciesCache.notNullEntries
-            .flatMap { it.value?.valueOrNull()?.dependenciesClassPath ?: emptyList() }.distinct()
+            .flatMap { it.value.valueOrNull()?.dependenciesClassPath ?: emptyList() }.distinct()
 
         sdkFiles + ScriptDependenciesManager.toVfsRoots(scriptDependenciesClasspath)
     }
@@ -115,7 +115,7 @@ class ScriptsCompilationConfigurationCache(private val project: Project) {
             .flatMap { it.rootProvider.getFiles(OrderRootType.SOURCES).toList() }
 
         val scriptDependenciesSources = scriptDependenciesCache.notNullEntries
-            .flatMap { it.value?.valueOrNull()?.dependenciesSources ?: emptyList() }.distinct()
+            .flatMap { it.value.valueOrNull()?.dependenciesSources ?: emptyList() }.distinct()
         sdkSources + ScriptDependenciesManager.toVfsRoots(scriptDependenciesSources)
     }
 
