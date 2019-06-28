@@ -133,7 +133,8 @@ public class KotlinTypedHandler extends TypedHandlerDelegate {
                     }
                     if (leaf.getText().equals("}")
                         && parent instanceof KtFunctionLiteral
-                        && document.getLineNumber(offset) == document.getLineNumber(parent.getTextRange().getStartOffset())) {
+                        && document.getLineNumber(offset) == document.getLineNumber(parent.getTextRange().getStartOffset())
+                    ) {
                         EditorModificationUtil.insertStringAtCaret(editor, "{} ", false, false);
                         editor.getCaretModel().moveToOffset(offset + 1);
                         return Result.STOP;
