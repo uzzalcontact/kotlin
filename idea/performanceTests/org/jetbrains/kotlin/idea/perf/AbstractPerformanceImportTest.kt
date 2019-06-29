@@ -91,7 +91,7 @@ abstract class AbstractPerformanceImportTest : KotlinLightCodeInsightFixtureTest
                 },
                 test = {
                     project.executeWriteCommand<String?>("") {
-                        doPerfTest(file, fqName, filter, descriptorName, importInsertHelper, psiDocumentManager)
+                        perfTestCore(file, fqName, filter, descriptorName, importInsertHelper, psiDocumentManager)
                     }
                 },
                 tearDown = { log: String? ->
@@ -112,7 +112,7 @@ abstract class AbstractPerformanceImportTest : KotlinLightCodeInsightFixtureTest
         }
     }
 
-    abstract fun doPerfTest(
+    abstract fun perfTestCore(
         file: KtFile,
         fqName: FqName,
         filter: (DeclarationDescriptor) -> Boolean,
@@ -120,6 +120,7 @@ abstract class AbstractPerformanceImportTest : KotlinLightCodeInsightFixtureTest
         importInsertHelper: ImportInsertHelper,
         psiDocumentManager: PsiDocumentManager
     ): String?
+
 
     protected open val nameCountToUseStarImportDefault: Int
         get() = 1

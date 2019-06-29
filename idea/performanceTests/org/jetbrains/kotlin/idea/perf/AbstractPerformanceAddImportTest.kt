@@ -33,7 +33,7 @@ abstract class AbstractPerformanceAddImportTest : AbstractPerformanceImportTest(
 
     override fun stats(): Stats = stats
 
-    override fun doPerfTest(
+    override fun perfTestCore(
         file: KtFile,
         fqName: FqName,
         filter: (DeclarationDescriptor) -> Boolean,
