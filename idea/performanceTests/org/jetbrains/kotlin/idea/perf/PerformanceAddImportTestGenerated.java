@@ -199,6 +199,11 @@ public class PerformanceAddImportTestGenerated extends AbstractPerformanceAddImp
         runTest("idea/testData/addImport/ImportFromObject.kt");
     }
 
+    @TestMetadata("ImportFromRoot.kt")
+    public void testImportFromRoot() throws Exception {
+        runTest("idea/testData/addImport/ImportFromRoot.kt");
+    }
+
     @TestMetadata("ImportFunctionBug.kt")
     public void testImportFunctionBug() throws Exception {
         runTest("idea/testData/addImport/ImportFunctionBug.kt");
