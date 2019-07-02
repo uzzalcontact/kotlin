@@ -112,7 +112,7 @@ class MoveDeclarationsProcessor(
 
         val declarationProcessor = MoveKotlinDeclarationsProcessor(
             MoveDeclarationsDescriptor(
-                moveSource = MoveSource(stubDeclarations),
+                moveSource = moveSource(stubDeclarations),
                 moveTarget = KotlinMoveTargetForExistingElement(targetPsiFile),
                 delegate = MoveDeclarationsDelegate.TopLevel,
                 project = project

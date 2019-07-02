@@ -40,7 +40,7 @@ class KotlinChangePackageRefactoring(val file: KtFile) {
         val declarationProcessor = MoveKotlinDeclarationsProcessor(
             MoveDeclarationsDescriptor(
                 project = project,
-                moveSource = MoveSource(file),
+                moveSource = moveSource(file),
                 moveTarget = KotlinDirectoryMoveTarget(newFqName, file.containingDirectory!!),
                 delegate = MoveDeclarationsDelegate.TopLevel
             )
