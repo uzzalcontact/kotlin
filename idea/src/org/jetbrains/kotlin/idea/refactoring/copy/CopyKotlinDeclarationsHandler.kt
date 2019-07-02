@@ -28,8 +28,8 @@ import com.intellij.util.IncorrectOperationException
 import com.intellij.util.containers.MultiMap
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.idea.codeInsight.shorten.performDelayedRefactoringRequests
-import org.jetbrains.kotlin.idea.core.getPackage
-import org.jetbrains.kotlin.idea.core.packageMatchesDirectory
+import org.jetbrains.kotlin.idea.core.getFqNameWithImplicitPrefix
+import org.jetbrains.kotlin.idea.core.packageMatchesDirectoryOrImplicit
 import org.jetbrains.kotlin.idea.core.util.toPsiDirectory
 import org.jetbrains.kotlin.idea.refactoring.checkConflictsInteractively
 import org.jetbrains.kotlin.idea.refactoring.createKotlinFile
@@ -245,8 +245,8 @@ class CopyKotlinDeclarationsHandler : CopyHandlerDelegateBase() {
                     if (fileToCopy != null) {
                         targetFile = runWriteAction {
                             val copiedFile = targetDirectory.copyFileFrom(targetFileName, fileToCopy)
-                            if (copiedFile is KtFile && fileToCopy.packageMatchesDirectory()) {
-                                targetDirectory.getPackage()?.qualifiedName?.let { copiedFile.packageFqName = FqName(it) }
+                            if (copiedFile is KtFile && fileToCopy.packageMatchesDirectoryOrImplicit()) {
+                                copiedFile.packageFqName = targetDirectory.getFqNameWithImplicitPrefix()
                             }
                             performDelayedRefactoringRequests(project)
                             copiedFile
