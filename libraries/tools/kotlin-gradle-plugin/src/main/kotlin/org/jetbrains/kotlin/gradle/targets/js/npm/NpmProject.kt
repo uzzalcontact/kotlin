@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJsCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.disambiguateName
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.nodeJs
-import org.jetbrains.kotlin.gradle.targets.js.npm.resolver.KotlinNpmResolver
 import java.io.File
 
 val KotlinJsCompilation.npmProject: NpmProject
@@ -66,7 +65,7 @@ open class NpmProject(val compilation: KotlinJsCompilation) {
      * Require [request] nodejs module and return canonical path to it's main js file.
      */
     fun require(request: String): String {
-        KotlinNpmResolver.requireResolved(project)
+        project.nodeJs.root.requireResolved(project)
         return modules.require(request)
     }
 

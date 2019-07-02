@@ -12,17 +12,14 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJsCompilation
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.nodeJs
 import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
 import org.jetbrains.kotlin.gradle.targets.js.npm.resolver.KotlinCompilationNpmResolver
-import org.jetbrains.kotlin.gradle.targets.js.npm.resolver.KotlinNpmResolver
 import java.io.File
 
-class KotlinPackageJsonTask : DefaultTask() {
+open class KotlinPackageJsonTask : DefaultTask() {
     @Internal
-    lateinit var compilation: KotlinJsCompilation
-
-    private val compilationResolver: KotlinCompilationNpmResolver
-        get() = KotlinNpmResolver.getResolver(project.rootProject).projectResolvers[project]!!.byCompilation[compilation]!!
+    internal lateinit var compilationResolver: KotlinCompilationNpmResolver
 
     @get:InputFiles
     val configuration: Configuration
@@ -30,7 +27,7 @@ class KotlinPackageJsonTask : DefaultTask() {
 
     @get:OutputFile
     val packageJson: File
-        get() = compilation.npmProject.packageJsonFile
+        get() = compilationResolver.npmProject.packageJsonFile
 
     @TaskAction
     fun resolve() {

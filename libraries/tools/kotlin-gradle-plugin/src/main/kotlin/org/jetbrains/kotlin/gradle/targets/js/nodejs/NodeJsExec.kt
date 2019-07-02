@@ -9,7 +9,7 @@ import org.gradle.api.tasks.AbstractExecTask
 
 open class NodeJsExec : AbstractExecTask<NodeJsExec>(NodeJsExec::class.java) {
     init {
-        val nodeJs = NodeJsPlugin.apply(project).root
+        val nodeJs = NodeJsRootPlugin.apply(project).root
         dependsOn(nodeJs.npmInstallTask)
 
         executable = nodeJs.environment.nodeExecutable

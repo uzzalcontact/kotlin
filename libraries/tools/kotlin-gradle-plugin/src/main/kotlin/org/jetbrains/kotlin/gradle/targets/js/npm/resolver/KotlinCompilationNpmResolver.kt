@@ -15,15 +15,32 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinUsages
 import org.jetbrains.kotlin.gradle.plugin.usesPlatformOf
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.nodeJs
 import org.jetbrains.kotlin.gradle.targets.js.npm.*
-import org.jetbrains.kotlin.gradle.targets.js.npm.resolved.NpmProjectPackage
+import org.jetbrains.kotlin.gradle.targets.js.npm.resolved.KotlinCompilationNpmResolution
+import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinPackageJsonTask
+import org.jetbrains.kotlin.gradle.tasks.createOrRegisterTask
 
 internal class KotlinCompilationNpmResolver(
     val projectResolver: KotlinProjectNpmResolver,
     val compilation: KotlinJsCompilation
 ) {
     val resolver = projectResolver.resolver
+    val npmProject = compilation.npmProject
     val target get() = compilation.target
     val project get() = target.project
+
+    init {
+        val npmResolveTask = resolver.nodeJs.npmInstallTask
+
+        val packageJsonTaskName = npmProject.packageJsonTaskName
+        val packageJsonTask = target.project.createOrRegisterTask<KotlinPackageJsonTask>(packageJsonTaskName) { task ->
+            task.compilationResolver = this
+            task.description = "Create package.json file for $compilation"
+        }
+
+        npmResolveTask.dependsOn(packageJsonTask.getTaskOrProvider())
+
+        compilation.compileKotlinTask.dependsOn(npmResolveTask)
+    }
 
     val aggregatedConfiguration: Configuration by lazy {
         createAggregatedConfiguration()
@@ -32,6 +49,8 @@ internal class KotlinCompilationNpmResolver(
     val projectPackage by lazy {
         createPackageJson(aggregatedConfiguration)
     }
+
+    fun close() = projectPackage
 
     private fun createAggregatedConfiguration(): Configuration {
         val all = project.configurations.create("${compilation.name}Npm")
@@ -77,8 +96,7 @@ internal class KotlinCompilationNpmResolver(
         return toolsConfiguration
     }
 
-    private fun createPackageJson(configuration: Configuration): NpmProjectPackage {
-        val npmProject = compilation.npmProject
+    private fun createPackageJson(configuration: Configuration): KotlinCompilationNpmResolution {
         val name = npmProject.name
         val packageJson = PackageJson(
             name,
@@ -117,7 +135,7 @@ internal class KotlinCompilationNpmResolver(
             it(packageJson)
         }
 
-        val npmPackage = NpmProjectPackage(
+        val npmPackage = KotlinCompilationNpmResolution(
             project,
             npmProject,
             npmDependencies,

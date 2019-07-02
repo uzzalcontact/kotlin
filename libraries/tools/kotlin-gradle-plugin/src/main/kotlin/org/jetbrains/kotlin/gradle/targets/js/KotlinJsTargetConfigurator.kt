@@ -23,21 +23,6 @@ open class KotlinJsTargetConfigurator(kotlinPluginVersion: String) :
         target as KotlinJsTarget
 
         super.configureTarget(target)
-
-        target.compilations.forEach {
-            val npmResolveTask = target.project.nodeJs.root.npmInstallTask
-            val npmProject = it.npmProject
-
-            val packageJsonTaskName = npmProject.packageJsonTaskName
-            npmResolveTask.dependsOn(packageJsonTaskName)
-
-            target.project.createOrRegisterTask<KotlinPackageJsonTask>(packageJsonTaskName) { task ->
-                task.compilation = it
-                task.description = "Create package.json file for $it"
-            }
-
-            it.compileKotlinTask.dependsOn(npmResolveTask)
-        }
     }
 
     override fun configureTest(target: KotlinOnlyTarget<KotlinJsCompilation>) {

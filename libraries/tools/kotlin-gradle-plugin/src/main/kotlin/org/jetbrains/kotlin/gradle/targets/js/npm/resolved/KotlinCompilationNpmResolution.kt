@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.gradle.targets.js.npm.PackageJson
 /**
  * [NpmProject] full package info
  */
-class NpmProjectPackage(
+class KotlinCompilationNpmResolution(
     val project: Project,
     val npmProject: NpmProject,
     val npmDependencies: Collection<NpmDependency>,

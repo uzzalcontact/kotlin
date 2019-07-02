@@ -8,7 +8,7 @@ package org.jetbrains.kotlin.gradle.targets.js.npm
 import com.google.gson.stream.JsonWriter
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.nodeJs
-import org.jetbrains.kotlin.gradle.targets.js.npm.resolved.NpmProjectPackage
+import org.jetbrains.kotlin.gradle.targets.js.npm.resolved.KotlinCompilationNpmResolution
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.StringWriter
@@ -21,7 +21,7 @@ import java.nio.file.Files
 class NpmSimpleLinker(val rootProject: Project) {
     private val rootProjectNodeModules = rootProject.nodeJs.root.rootPackageDir.resolve(NpmProject.NODE_MODULES)
 
-    fun link(projects: Collection<NpmProjectPackage>) {
+    fun link(projects: Collection<KotlinCompilationNpmResolution>) {
         rootProjectNodeModules.listFiles()?.forEach {
             val path = it.toPath()
             when {

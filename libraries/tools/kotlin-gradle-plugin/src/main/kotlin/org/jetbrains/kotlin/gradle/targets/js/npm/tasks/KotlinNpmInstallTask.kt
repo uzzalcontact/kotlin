@@ -8,13 +8,14 @@ package org.jetbrains.kotlin.gradle.targets.js.npm.tasks
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.nodeJs
 import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
-import org.jetbrains.kotlin.gradle.targets.js.npm.resolver.KotlinNpmResolver
+import org.jetbrains.kotlin.gradle.targets.js.npm.resolver.KotlinRootNpmResolver
 import java.io.File
 
 open class KotlinNpmInstallTask : DefaultTask() {
-    private val resolver: KotlinNpmResolver
-        get() = KotlinNpmResolver.getResolver(project)
+    private val resolver: KotlinRootNpmResolver
+        get() = project.nodeJs.root.requireResolver()
 
     init {
         check(project == project.rootProject)
@@ -22,15 +23,11 @@ open class KotlinNpmInstallTask : DefaultTask() {
 
     @get:InputFiles
     val packageJsonFiles: Collection<File>
-        get() = resolver.projectResolvers.values.flatMap { projectResolver ->
-            projectResolver.byCompilation.keys.map { compilation ->
-                compilation.npmProject.packageJsonFile
-            }
-        }
+        get() = project.nodeJs.root.resolutionState.compilations.map { it.npmProject.packageJsonFile }
 
     @TaskAction
     fun resolve() {
-        resolver.installAndClose()
+        project.nodeJs.root.resolveIfNeeded(project)
     }
 
     companion object {

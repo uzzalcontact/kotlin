@@ -11,17 +11,19 @@ import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.jetbrains.kotlin.gradle.internal.ProcessedFilesCache
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.nodeJs
 
 /**
  * Cache for storing already created [GradleNodeModule]s
  */
-internal class GradleNodeModulesCache(val project: Project) : AutoCloseable {
+internal class GradleNodeModulesCache(val nodeJs: NodeJsRootExtension) : AutoCloseable {
     companion object {
         const val STATE_FILE_NAME = ".visited"
     }
 
-    internal val dir = project.nodeJs.root.nodeModulesGradleCacheDir
+    val project: Project get() = nodeJs.project
+    internal val dir = nodeJs.root.nodeModulesGradleCacheDir
     private val cache = ProcessedFilesCache(project, dir, STATE_FILE_NAME, "8")
 
     fun ensureImported(
