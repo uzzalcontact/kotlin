@@ -5,11 +5,14 @@
 
 package org.jetbrains.kotlin.idea.perf
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzerSettings
+import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerImpl
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInspection.ex.InspectionProfileImpl
 import com.intellij.ide.highlighter.ModuleFileType
+import com.intellij.ide.startup.impl.StartupManagerImpl
 import com.intellij.idea.IdeaTestApplication
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
@@ -25,28 +28,33 @@ import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.projectRoots.impl.JavaAwareProjectJdkTableImpl
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.startup.StartupManager
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vcs.changes.ChangeListManagerImpl
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.RunAll
 import com.intellij.testFramework.UsefulTestCase
+import com.intellij.testFramework.fixtures.EditorTestFixture
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.util.ThrowableRunnable
 import com.intellij.util.io.exists
+import com.intellij.util.ui.UIUtil
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlin.idea.test.ConfigLibraryUtil
+import org.jetbrains.kotlin.idea.test.invalidateLibraryCache
 import java.io.File
 import java.nio.file.Paths
 
 abstract class AbstractPerformanceProjectsTest : UsefulTestCase() {
 
     // myProject is not required for all potential perf test cases
-    private var myProject: Project? = null
+    protected var myProject: Project? = null
     private lateinit var jdk18: Sdk
     private lateinit var myApplication: IdeaTestApplication
 
@@ -79,6 +87,9 @@ abstract class AbstractPerformanceProjectsTest : UsefulTestCase() {
             ThrowableRunnable { super.tearDown() },
             ThrowableRunnable {
                 if (myProject != null) {
+                    DaemonCodeAnalyzerSettings.getInstance().isImportHintEnabled = true // return default value to avoid unnecessary save
+                    (StartupManager.getInstance(myProject!!) as StartupManagerImpl).checkCleared()
+                    (DaemonCodeAnalyzer.getInstance(myProject!!) as DaemonCodeAnalyzerImpl).cleanupAfterTest()
                     closeProject(myProject!!)
                     myProject = null
                 }
@@ -122,6 +133,7 @@ abstract class AbstractPerformanceProjectsTest : UsefulTestCase() {
 
                 projectManagerEx.openTestProject(project)
 
+                (StartupManager.getInstance(project) as StartupManagerImpl).runPostStartupActivities()
                 val changeListManagerImpl = ChangeListManager.getInstance(project) as ChangeListManagerImpl
                 changeListManagerImpl.waitUntilRefreshed()
 
@@ -130,6 +142,14 @@ abstract class AbstractPerformanceProjectsTest : UsefulTestCase() {
             tearDown = { project ->
                 lastProject = project
                 val prj = project!!
+
+                VirtualFileManager.getInstance().syncRefresh()
+
+                invalidateLibraryCache(project)
+
+                CodeInsightTestFixtureImpl.ensureIndexesUpToDate(project)
+
+                UIUtil.dispatchAllInvocationEvents()
 
                 // close all project but last - we're going to return and use it further
                 if (counter < warmUpIterations + iterations - 1) {
@@ -178,38 +198,53 @@ abstract class AbstractPerformanceProjectsTest : UsefulTestCase() {
             testName = "highlighting ${if (note.isNotEmpty()) "$note " else ""}${simpleFilename(fileName)}",
             setUp = {
                 val fileInEditor = openFileInEditor(project, fileName)
-                fileInEditor.psiFile
+                fileInEditor
             },
             test = { file ->
-                highlightFile(file!!)
+                Result(file!!, highlightFile(project, file!!.psiFile))
             },
             tearDown = {
-                highlightInfos = it ?: emptyList()
+                highlightInfos = it!!.highlightInfos
                 commitAllDocuments()
+                FileEditorManager.getInstance(project).closeFile(it!!.editorFile.psiFile.virtualFile)
             }
         )
+        println("-".repeat(40))
+        println("$fileName ->\n${highlightInfos.joinToString("\n")}")
+        println()
+
         return highlightInfos
     }
 
-    private fun highlightFile(psiFile: PsiFile): List<HighlightInfo> {
+    private fun highlightFile(project: Project, psiFile: PsiFile): List<HighlightInfo> {
         val document = FileDocumentManager.getInstance().getDocument(psiFile.virtualFile)!!
         val editor = EditorFactory.getInstance().getEditors(document).first()
-        return CodeInsightTestFixtureImpl.instantiateAndRun(psiFile, editor, intArrayOf(), false)
+        return CodeInsightTestFixtureImpl.instantiateAndRun(psiFile, editor, IntArray(0), false)
     }
 
-    data class EditorFile(val psiFile: PsiFile, val document: Document)
-
     private fun openFileInEditor(project: Project, name: String): EditorFile {
+        val fileDocumentManager = FileDocumentManager.getInstance()
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        val psiDocumentManager = PsiDocumentManager.getInstance(project)
+
         val psiFile = projectFileByName(project, name)
         val vFile = psiFile.virtualFile
 
-        FileDocumentManager.getInstance().reloadFiles(vFile)
+        runInEdtAndWait {
+            fileEditorManager.openFile(vFile, true)
+        }
+        val document = fileDocumentManager.getDocument(vFile)!!
+//        runInEdtAndWait {
+//            fileDocumentManager.reloadFromDisk(document)
+//        }
 
-        val fileEditorManager = FileEditorManager.getInstance(project)
-        fileEditorManager.openFile(vFile, true)
-        val document = FileDocumentManager.getInstance().getDocument(vFile)!!
         assertNotNull(EditorFactory.getInstance().getEditors(document))
-        disposeOnTearDown(Disposable { fileEditorManager.closeFile(vFile) })
+        assertTrue(document.text.isNotEmpty())
+
+//        runInEdtAndWait {
+//            psiDocumentManager.commitDocument(document)
+//        }
+
         return EditorFile(psiFile = psiFile, document = document)
     }
 
@@ -219,4 +254,9 @@ abstract class AbstractPerformanceProjectsTest : UsefulTestCase() {
         val virtualFile = fileManager.refreshAndFindFileByUrl(url)
         return virtualFile!!.toPsiFile(project)!!
     }
+
+    private data class EditorFile(val psiFile: PsiFile, val document: Document)
+
+    private data class Result(val editorFile: EditorFile, val highlightInfos: List<HighlightInfo>)
+
 }

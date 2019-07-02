@@ -78,10 +78,13 @@ class AsyncScriptDependenciesLoader internal constructor(project: Project) : Scr
         debug(file) { "finish async dependencies loading" }
 
         processRefinedConfiguration(result, file)
+
+        debug(file) { "finish process dependencies" }
     }
 
     private inner class LoaderBackgroundTask {
         private val sequenceOfFiles: ConcurrentLinkedQueue<VirtualFile> = ConcurrentLinkedQueue()
+
         private var forceStop : Boolean = false
         private var startedSilently : Boolean = false
 

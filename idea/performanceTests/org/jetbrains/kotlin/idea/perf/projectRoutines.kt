@@ -11,6 +11,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.impl.PsiDocumentManagerBase
 import com.intellij.testFramework.EdtTestUtil
 import com.intellij.util.ThrowableRunnable
+import com.intellij.util.ui.UIUtil
 
 fun commitAllDocuments() {
     ProjectManagerEx.getInstanceEx().openProjects.forEach { project ->
@@ -23,8 +24,15 @@ fun commitAllDocuments() {
     }
 }
 
+fun runInEdtAndWait(block: () -> Unit) {
+    EdtTestUtil.runInEdtAndWait(ThrowableRunnable {
+        block()
+    })
+}
+
 fun closeProject(project: Project) {
     commitAllDocuments()
+    UIUtil.dispatchAllInvocationEvents()
     val projectManagerEx = ProjectManagerEx.getInstanceEx()
     projectManagerEx.forceCloseProject(project, true)
 }

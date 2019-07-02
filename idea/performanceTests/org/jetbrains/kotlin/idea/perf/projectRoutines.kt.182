@@ -23,6 +23,12 @@ fun commitAllDocuments() {
     }
 }
 
+fun runInEdtAndWait(block: () -> Unit) {
+    EdtTestUtil.runInEdtAndWait(ThrowableRunnable {
+        block()
+    })
+}
+
 fun closeProject(project: Project) {
     commitAllDocuments()
     val projectManagerEx = ProjectManagerEx.getInstanceEx()
